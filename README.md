@@ -3,5 +3,5 @@
 <ul>
   <li> go to bash and enter the directory of choice. enter following commands: conda create --name myenv python=3.11</li>
   <li> enter the following command to activate the envconda activate myenv</li>
-  <li> clone the repo in your local machine: git clone <PASTE_REPOSITORY_URL_HERE></li>
+  <li> clone the repo in your local machine: git clone "PASTE_REPOSITORY_URL_HERE"</li>
 </ul>
