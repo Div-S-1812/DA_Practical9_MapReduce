@@ -2,6 +2,7 @@
 <p>This repository include the code to create an inverted index and frequency map for words in text data, <br> Follow the given steps to create a venv and install mrjob python library</p>
 <ul>
   <li> go to bash and enter the directory of choice. enter following commands: conda create --name myenv python=3.11</li>
-  <li> enter the following command to activate the envconda activate myenv</li>
+  <li> enter the following command to activate the env: conda activate myenv</li>
   <li> clone the repo in your local machine: git clone "PASTE_REPOSITORY_URL_HERE"</li>
+  <li> install required dependencies from the requirements.txt file</li>
 </ul>
