@@ -1,44 +1,69 @@
 from mrjob.job import MRJob
 import pandas as pd
 import matplotlib.pyplot as plt
+import re
 
+# Regular expression to get clean words (removing punctuation)
+WORD_RE = re.compile(r"[\w']+")
 
-class WordCount(MRJob):
-    #define a pandas dataframe
-    #wordCount=pd.DataFrame(columns=['word', 'count'])
-    #row_list=[]
+class InvertedIndexAndFrequency(MRJob):
+    
+    def mapper_init(self):
+        # Initialize a line counter for this split/file mapper instance
+        self.line_number = 0
 
-    #create a mapper function 
-    def mapper(self, _, line): #self: the class itself, _ an unused variable, 
-        #in this instance the key, and the line is the line being read from the text 
-        for word in line.strip().split(' '):
-            if len(word) > 0:
-                yield (word, 1)
-
-    #create the reducer class 
-    def reducer(self, word, count):
-        #row_list.append[{'word':word, 'count':sum(count)}]
-        yield (word, sum(count))
-
-    #print the dataframe
-    '''def wordCountHead():
-        wordCount=pd.DataFrame(row_list)
-        print(wordCount.head())'''
+    def mapper(self, _, line):
+        self.line_number += 1
+        # break down line into individual clean words 
+        for word in WORD_RE.findall(line):
+            word_lower = word.lower()
+            # Yield word as key, and a dictionary containing line occurrence and a count of 1
+            yield (word_lower, {"line": self.line_number, "count": 1})
+              
+    def reducer(self, word, values):
+        total_count = 0
+        lines_found = set() #datatype store an unordered collection of unique items
+        
+        # add counts and unique line numbers for each word
+        for val in values:
+            total_count += val["count"]
+            lines_found.add(val["line"])
+            
+        # Yield the word mapping to its frequency and sorted list of lines
+        yield (word, {"count": total_count, "lines": sorted(list(lines_found))})
 
 if __name__ == '__main__':
-    mr_job=WordCount(args=['inputtext1.txt'])
+    # Simulating data execution using 'inputtext1.txt'
+    mr_job = InvertedIndexAndFrequency(args=['inputtext1.txt'])
     results = []
-    # Run the job and read the raw output stream sequentially
+    
     with mr_job.make_runner() as runner:
         runner.run()
         for key, value in mr_job.parse_output(runner.cat_output()):
-            results.append({'word': key, 'count': value})
-
-    # 4. Initialize and print the DataFrame after the job completes
+            results.append({
+                'word': key, 
+                'count': value['count'], 
+                'lines': value['lines']
+            })
+            
+    #print the sample inverted index dictionary items
+    print("Inverted Index Sample (First 5):")
+    print(results[:5])
+    
+    #build Pandas DataFrame
     wordCount_df = pd.DataFrame(results)
-    print("\n--- Pandas DataFrame Head ---")
-    print(wordCount_df.head())
+    
+    print("\nPandas DataFrame Head (Inverted Index Mapping):")
+    print(wordCount_df[['word', 'lines', 'count']].head())
+    
+    # display chart of frequently occuring words
     top_words = wordCount_df.sort_values(by="count", ascending=False).head(10)
-    top_words.plot(x="word", y="count", kind="bar")
-    plt.savefig("word_count_chart.png", bbox_inches="tight")
-    print("Plot saved successfully as 'word_count_chart.png'")
+    print("\nTop 10 Most Frequent Words:")
+    print(top_words[['word', 'count']])
+    
+    #plot
+    top_words.plot(x="word", y="count", kind="bar", color="skyblue")
+    plt.title("Top 10 Most Frequent Words")
+    plt.ylabel("Occurrences")
+    plt.savefig("word_count_chart.png")
+    print("\nPlot saved successfully as 'word_count_chart.png'")
